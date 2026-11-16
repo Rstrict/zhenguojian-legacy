@@ -2,6 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+// export 只把符号转发给本库的导入者，不会引入本库自身；
+// 本文件里的 `appVersion` 默认值还要靠下面这行 import 才能解析。
+import 'app_build.dart';
+
 export 'app_build.dart';
 
 ThemeData televisionTheme(ThemeData theme) {
