@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 SOURCE_DIRECTORIES = {
-    '.github', 'lib', 'native', 'android', 'windows', 'ios', 'macos', 'linux',
+    '.github', 'config', 'lib', 'native', 'android', 'windows', 'ios', 'macos', 'linux',
     'web', 'assets', 'packages', 'scripts', 'test', 'test_driver', 'integration_test',
 }
 SOURCE_FILES = {
@@ -52,7 +52,8 @@ REQUIRED_FILES = {
     'native/go.mod', 'native/go.sum', 'native/bridge/main.go',
     'android/app/build.gradle.kts', 'android/gradle/wrapper/gradle-wrapper.properties',
     'windows/CMakeLists.txt', 'windows/flutter/CMakeLists.txt',
-    '.github/workflows/build.yml', 'scripts/build_native.py',
+    '.github/workflows/verify.yml', '.github/workflows/android.yml',
+    'scripts/build_native.py',
 }
 
 

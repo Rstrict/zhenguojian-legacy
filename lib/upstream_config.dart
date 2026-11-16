@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'app_build.dart';
 import 'core_bridge.dart';
 
 /// 红果上游参数的外部化配置（0.7.18）。
@@ -10,8 +11,11 @@ import 'core_bridge.dart';
 /// 一律静默忽略，核心继续用内置默认值。这样红果改 UA / 版本号 / 接口域名
 /// 这类**参数**时，只改仓库里的 `config/upstream.json` 即可生效，不必发版；
 /// 若它改的是签名算法或注册协议（逻辑），仍然需要发版。
+///
+/// 地址跟随 [appRepoSlug]：fork 独立后从这里拉自己仓库的配置，
+/// 不再被上游仓库的取值覆盖。
 const upstreamConfigURL =
-    'https://raw.githubusercontent.com/kuoluoss/zhenguojian/main/config/upstream.json';
+    'https://raw.githubusercontent.com/$appRepoSlug/main/config/upstream.json';
 
 /// 拉取并下发远程配置。永远不抛异常（失败只记 debug 日志）。
 Future<void> refreshUpstreamConfig(AppRepository repository) async {

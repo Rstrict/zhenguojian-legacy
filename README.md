@@ -2,7 +2,7 @@
 
 多站源短剧浏览与在线播放应用，Android 手机版。基于开源项目 [Topkill/guoapp3](https://github.com/Topkill/guoapp3) 二次开发与改版。
 
-当前版本：**0.7.18+78** ｜ 平台：Android 8.0+（arm64-v8a） ｜ [下载最新版](https://github.com/kuoluoss/zhenguojian/releases/latest)
+当前版本：**0.7.19+79** ｜ 平台：Android 8.0+（arm64-v8a） ｜ [下载最新版](https://github.com/Rstrict/zhenguojian/releases/latest)
 
 ---
 
@@ -14,23 +14,22 @@
 - **数据存储**：剧库、追剧、观看历史、下载记录都保存在本机。
 - **账号**：没有云端账号，不需要登录；只有本机用户与权限管理。
 
-## 二、本次更新（0.7.18）
+## 二、本次更新（0.7.19）
 
-- **修复：红果视频播放，并降低"隔几天又坏"的频率**
-  - 签名与官方最新要求对齐（修正六个签名头中不一致的部分）；
-  - 播放按「签名+注册身份 → 仅注册身份 → 合成身份+签名」自动切换，主域不通自动换备用域，成功组合会记住；
-  - 被判定为重复身份时自动重新注册设备后再试；
-  - 同一集 10 分钟内重复打开复用播放地址，减少请求次数。
-- **新增：上游参数远程配置**
-  - UA、客户端版本号、接口域名、允许的播放组合可远程更新，这类参数变化不用再发版。
-- **改进：首页多源兜底**
-  - 所选站源全拉不到内容时，自动借用其他已授权站源，首页不再整页空白。
+- **本仓库独立发版**：应用内更新检查、远程参数下发、关于页署名全部指向本仓库，
+  不再拉取上游 `kuoluoss/zhenguojian` 的 Release 与配置。
+  - 版本号改为 `pubspec.yaml` 构建期注入，不再有第二份硬编码常量；
+  - 关于页署名改为本仓库维护者，原作者与上游改版仍按 GPL-3.0 署名保留。
+- **新增：CI 与构建流水线**
+  - `verify.yml`：构建脚本单测、`go vet`/`go test`、`flutter analyze`/`flutter test`；
+  - `android.yml`：arm64-v8a APK 构建，打 `v*` 标签自动发布 Release，签名走仓库 Secrets。
 
-上一版 0.7.17：修复红果播放取流。更早版本见 [Releases](https://github.com/kuoluoss/zhenguojian/releases)。
+上一版 0.7.18：红果播放签名修正 + 组合自动切换 + 播放地址缓存；参数远程可配；首页多源兜底。
+更早版本见 [Releases](https://github.com/Rstrict/zhenguojian/releases)。
 
 ## 三、快速开始
 
-1. 从 [Releases](https://github.com/kuoluoss/zhenguojian/releases/latest) 下载 `zhenguojian-<版本>-arm64-v8a.apk`。
+1. 从 [Releases](https://github.com/Rstrict/zhenguojian/releases/latest) 下载 `zhenguojian-<版本>-arm64-v8a.apk`。
 2. 手机上安装（需允许「安装未知来源应用」）。
 3. 打开即用；之后有新版本时，App 内会提示更新。
 
@@ -144,6 +143,9 @@ python3 scripts/build_android.py --abi arm64-v8a
 - **必须在纯英文路径下构建**（中文路径会导致工具链失败）。
 - 构建时不要设 HTTP 代理；访问 GitHub 时才需要代理。
 - 产物在 `dist/android/`，`SHA256SUMS.txt` 为校验清单。
+- 版本号、发布仓库身份由构建脚本从 `pubspec.yaml` 与环境变量注入，不写死在源码里：
+  `APP_VERSION` 取 `pubspec.yaml` 的 `version`，`REPO_OWNER` / `REPO_NAME` 默认 `Rstrict` / `zhenguojian`，
+  需要指向别的仓库时在构建前设置这两个环境变量即可。
 
 源码结构：
 
@@ -157,12 +159,32 @@ python3 scripts/build_android.py --abi arm64-v8a
 
 仓库只提交业务源码，不包含构建产物、依赖缓存、本地机器配置、签名文件与任何密钥。
 
+### 持续集成与发版
+
+| 工作流 | 触发 | 作用 |
+| --- | --- | --- |
+| `.github/workflows/verify.yml` | push / PR 到 `main` | 构建脚本单测、`go vet` + `go test`、`flutter analyze` + `flutter test` |
+| `.github/workflows/android.yml` | 推送 `v*` 标签、手动触发 | 构建 arm64-v8a APK；打标签时自动发布到 Releases |
+
+发版签名走四个仓库 Secrets，不要提交密钥：
+
+| Secret | 内容 |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | `release.jks` 的 Base64（`base64 -w0 release.jks`） |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
+| `ANDROID_KEY_ALIAS` | key 别名 |
+| `ANDROID_KEY_PASSWORD` | key 密码 |
+
+四个都配置 → 出正式签名包；一个都不配 → 出预览包（debug 签名）；只配一部分 → 构建失败并说明缺哪个。
+签名材料只在 runner 的 `RUNNER_TEMP` 里落盘，构建结束即删。
+
 播放器使用 [media_kit](https://github.com/media-kit/media-kit) / libmpv，合并与导出使用 [FFmpegKit min-gpl](https://github.com/sk3llo/ffmpeg_kit_flutter)（含 FFmpeg、x264 / x265 等 GPL 组件，适用上游许可证）。
 
 ## 十一、致谢与声明
 
 - 原始项目：[Topkill/guoapp3](https://github.com/Topkill/guoapp3)（原作者）
-- 本改版：[kuoluoss/zhenguojian](https://github.com/kuoluoss/zhenguojian)
+- 本仓库（fork）：[Rstrict/zhenguojian](https://github.com/Rstrict/zhenguojian)
+- 上游改版：[kuoluoss/zhenguojian](https://github.com/kuoluoss/zhenguojian)（本 fork 的起点）
 - 本应用不提供、不存储、不分发任何视频内容；所有内容来自各站源公开接口，版权归原站点与版权方所有。
 - 仅供个人学习与技术研究使用，请勿用于商业用途。
 
@@ -179,6 +201,7 @@ python3 scripts/build_android.py --abi arm64-v8a
 
 | 版本 | 日期 | 主要变化 |
 | --- | --- | --- |
+| 0.7.19 | 2026-11-16 | fork 独立发版：更新源/远程参数/署名指向本仓库；版本号改为构建期注入；新增 CI 与 APK 构建流水线 |
 | 0.7.18 | 2026-11-03 | 红果播放签名修正 + 组合自动切换 + 播放地址缓存；参数远程可配；首页多源兜底 |
 | 0.7.17 | 2026-10-31 | 修复红果播放取流（改注册匿名身份 + 无签名，保留签名兜底） |
 | 0.7.16 | 2026-10-22 | 修复红果站源不可用（六头签名）、开屏页不再卡住 |
@@ -206,4 +229,4 @@ python3 scripts/build_android.py --abi arm64-v8a
 | 0.6.6 | 2026-10-14 | 随机流按历史进度续播、加速提示改版 |
 | 0.6.5 | 2026-10-14 | 更新日志改走 Atom、已看为终态、随机流排除已看 |
 
-更早版本见 [Releases](https://github.com/kuoluoss/zhenguojian/releases)。
+更早版本见 [Releases](https://github.com/Rstrict/zhenguojian/releases)。

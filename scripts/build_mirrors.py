@@ -14,7 +14,10 @@ def mirrored_pub_lockfile(root, environment):
         return
     lockfile = Path(root) / 'pubspec.lock'
     original = lockfile.read_bytes()
-    rewritten = re.sub(r'(?m)^([ \t]+url:[ \t]*)"?https://pub\.(?:dev|dartlang\.org)/?"?([ \t]*)$',
+    # 尾部的 `\r?` 必须留在捕获组里：Windows 上 pubspec.lock 可能是 CRLF，
+    # 而 `(?m)$` 只匹配到 `\n` 之前，`\r` 不在 `[ \t]` 里，少了它整行匹配不上，
+    # 镜像改写会静默失效（GitHub 上跑同一份代码却是通的）。
+    rewritten = re.sub(r'(?m)^([ \t]+url:[ \t]*)"?https://pub\.(?:dev|dartlang\.org)/?"?([ \t]*\r?)$',
                        lambda match: match[1] + json.dumps(mirror) + match[2],
                        original.decode('utf-8')).encode('utf-8')
     if rewritten == original:

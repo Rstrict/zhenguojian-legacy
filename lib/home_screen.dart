@@ -1182,15 +1182,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           const SizedBox(height: 12),
                           // 作者信息（0.2.30 新增，用户要求）：
                           // 名字蓝色可点击，跳转各自 GitHub 页面，并标明身份。
+                          // fork 独立后地址来自 app_build.dart，GPL-3.0 要求保留上游署名。
                           const AboutCredit(
                             name: 'Topkill',
                             role: '开源项目 guoapp3 原作者',
-                            url: 'https://github.com/Topkill/guoapp3',
+                            url: appUpstreamUrl,
                           ),
                           const AboutCredit(
-                            name: '软萌小正太',
-                            role: '本应用改版与维护',
-                            url: 'https://github.com/kuoluoss/zhenguojian',
+                            name: appRepoOwner,
+                            role: '本 fork 维护',
+                            url: appRepoUrl,
                           ),
                           const SizedBox(height: 8),
                           Align(

@@ -23,9 +23,10 @@ import 'markdown_lite.dart';
 class AppUpdater {
   AppUpdater._();
 
-  /// 发布仓库（用户自有仓库，README 已标明原作者 Topkill/guoapp3）。
-  static const _owner = 'kuoluoss';
-  static const _repo = 'zhenguojian';
+  /// 发布仓库（本 fork 自有仓库，署名与原始项目来源见「关于」页）。
+  static const _owner = appRepoOwner;
+  static const _repo = appRepoName;
+  static const _userAgent = '$appRepoName-updater';
 
   /// GitHub API 直连地址（国内可能不通，失败即静默跳过）。
   static const _apiUrl =
@@ -412,7 +413,7 @@ class AppUpdater {
     client.connectionTimeout = const Duration(seconds: 10);
     try {
       final request = await client.getUrl(Uri.parse(_latestPageUrl));
-      request.headers.set(HttpHeaders.userAgentHeader, 'zhenguojian-updater');
+      request.headers.set(HttpHeaders.userAgentHeader, _userAgent);
       // 手动处理重定向，才能拿到 Location。
       // 注意：`followRedirects` 是 `HttpClientRequest` 的属性，不是 `HttpClient` 的。
       request.followRedirects = false;
@@ -442,15 +443,16 @@ class AppUpdater {
       final url =
           'https://github.com/$_owner/$_repo/releases/expanded_assets/$tag';
       final request = await client.getUrl(Uri.parse(url));
-      request.headers.set(HttpHeaders.userAgentHeader, 'zhenguojian-updater');
+      request.headers.set(HttpHeaders.userAgentHeader, _userAgent);
       final response = await request.close().timeout(
         const Duration(seconds: 20),
       );
       if (response.statusCode != 200) return null;
       final body = await response.transform(utf8.decoder).join();
-      // 页面里含形如 zhenguojian-0.5.0+46-arm64-v8a.apk 的文件名。
+      // 页面里含形如 <slug>-0.5.0+46-arm64-v8a.apk 的文件名。
+      // appSlug 只含字母，不含正则元字符，直接插值即可。
       final match = RegExp(
-        r'zhenguojian-[0-9][0-9.+]*-arm64-v8a\.apk',
+        '$appSlug-[0-9][0-9.+]*-arm64-v8a\\.apk',
       ).firstMatch(body);
       return match?.group(0);
     } catch (_) {
@@ -554,7 +556,7 @@ class AppUpdater {
     client.connectionTimeout = const Duration(seconds: 10);
     try {
       final request = await client.getUrl(Uri.parse(url));
-      request.headers.set(HttpHeaders.userAgentHeader, 'zhenguojian-updater');
+      request.headers.set(HttpHeaders.userAgentHeader, _userAgent);
       request.headers.set(
         HttpHeaders.acceptHeader,
         'application/vnd.github+json',
@@ -730,7 +732,7 @@ class AppUpdater {
       directory = Directory.systemTemp;
     }
     final target = File(
-      '${directory.path}/zhenguojian-update-${release.apkName}',
+      '${directory.path}/${appSlug}-update-${release.apkName}',
     );
 
     // 下载同样需要走系统代理：否则 VPN 下会出现"能检测到更新、却下载不动"。
@@ -764,7 +766,7 @@ class AppUpdater {
     client.connectionTimeout = const Duration(seconds: 10);
     try {
       var request = await client.getUrl(Uri.parse(url));
-      request.headers.set(HttpHeaders.userAgentHeader, 'zhenguojian-updater');
+      request.headers.set(HttpHeaders.userAgentHeader, _userAgent);
       var response = await request.close().timeout(const Duration(seconds: 15));
 
       // GitHub Releases 会 302 到对象存储，镜像站点通常直接返回。
@@ -773,7 +775,7 @@ class AppUpdater {
         final location = response.headers.value(HttpHeaders.locationHeader);
         if (location == null) break;
         request = await client.getUrl(Uri.parse(location));
-        request.headers.set(HttpHeaders.userAgentHeader, 'zhenguojian-updater');
+        request.headers.set(HttpHeaders.userAgentHeader, _userAgent);
         response = await request.close().timeout(const Duration(seconds: 15));
         redirects++;
       }

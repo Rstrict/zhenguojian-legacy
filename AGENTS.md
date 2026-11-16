@@ -39,3 +39,21 @@
 不要查看、下载、分析或处理站源图片。页面可正常显示海报地址；开发验证使用合成数据或拦截图片请求。用户直接提供的界面截图可以查看。
 
 遵守先实现后集中验证的节奏；未经用户明确要求，不启动子 AGENT。
+
+## 本 fork 的身份约定
+
+本仓库是 `Rstrict/zhenguojian`，从 `kuoluoss/zhenguojian` fork 而来并独立发版。以下几条是本 fork 相对上游新增的硬约定：
+
+1. **发布仓库身份只有一个来源**：`lib/app_build.dart` 里的 `appRepoOwner` / `appRepoName`。
+   应用内更新、远程参数下发、关于页署名都从这里取，不要再往业务代码里写 `owner/repo` 字面量。
+   需要换仓库时改这两个默认值，或构建前设置 `REPO_OWNER` / `REPO_NAME` 环境变量。
+2. **版本号只有一个来源**：`pubspec.yaml` 的 `version`。构建脚本把它作为 `APP_VERSION` 注入，
+   代码里不允许再出现第二份硬编码版本常量（历史上 `0.2.18` 与 `0.7.18` 并存，导致更新检查永远提示有新版本）。
+3. **GPL-3.0 署名不可移除**：`README.md` 与关于页必须同时保留原始项目 `Topkill/guoapp3` 与上游改版
+   `kuoluoss/zhenguojian` 的署名。fork 可以用自己的名字发版，但不能抹掉上游。
+4. **密钥只走仓库 Secrets**：`ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、
+   `ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD` 四项由 `scripts/configure_signing.py` 在 CI 中落到
+   `RUNNER_TEMP`，构建后立即清理。任何 keystore、`key.properties`、`.env` 都不得提交。
+5. **CI 是交付前置条件**：`verify.yml` 的构建脚本单测、`go vet`/`go test`、`flutter analyze`/`flutter test`
+   全绿才算改动完成；`android.yml` 只在打 `v*` 标签时发布 Release。
+

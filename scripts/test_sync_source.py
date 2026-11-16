@@ -55,6 +55,16 @@ class SourceSyncTests(unittest.TestCase):
             self.assertEqual((self.destination / '.git' / name).read_text(), content)
         self.assertFalse(synchronize(self.source, self.destination).changed)
 
+    def test_config_and_workflows_are_part_of_the_published_source(self):
+        # 回归：`config/` 曾经不在收录规则里，`config/upstream.json` 会被静默排除，
+        # 而 App 的远程参数正是从仓库的这个路径拉取，镜像发出去就是缺文件。
+        self.write(self.source / 'config/upstream.json', '{"hongguoHosts":[]}')
+        result = synchronize(self.source, self.destination)
+        self.assertTrue(result.changed)
+        self.assertTrue((self.destination / 'config/upstream.json').is_file())
+        for name in ['.github/workflows/verify.yml', '.github/workflows/android.yml']:
+            self.assertTrue((self.destination / name).is_file(), name)
+
     def test_check_does_not_write_and_updates_include_deletions(self):
         added = self.source / 'lib/temporary.dart'
         self.write(added, 'first')
